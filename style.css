@@ -1,0 +1,8 @@
+input[type="checkbox"] + label {
+    vertical-align: top;
+}
+
+
+#login_box_title, #connect_button_wrapper {
+    text-align: center;
+}

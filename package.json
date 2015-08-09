@@ -1,0 +1,8 @@
+{
+	"name": "chat-master",
+	"main": "main.html",
+	"window": {
+    		"toolbar": true,
+		"position": "center"
+  	}
+}
