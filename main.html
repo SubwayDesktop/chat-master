@@ -34,7 +34,7 @@
 		    <tr>
 		      <td data-text="Server: "></td>
 		      <td>
-			<input id="input_server" type="text" />
+			<input name="server" type="text" />
 		      </td>
 		    </tr>
 		    <tr>
@@ -68,9 +68,13 @@
 		      </td>
 		    </tr>
 		    <tr>
-		      <td>
+		      <td colspan="2">
 			<input id="checkbox_ssl" name="ssl" type="checkbox" />
 			<label for="checkbox_ssl" data-text="Secure Connection"></label>
+			<input id="checkbox_self_signed" name="self_signed" type="checkbox" />
+			<label for="checkbox_self_signed" data-text="Self-signed" data-title="Accept certificates from a non trusted CA"></label>
+			<input id="checkbox_sasl" name="sasl" type="checkbox" />
+			<label for="checkbox_sasl" data-text="SASL"></label>
 		      </td>
 		    </tr>
 		  </table>
