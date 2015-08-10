@@ -90,26 +90,26 @@
 	  <widget-table-view id="channel_list"></widget-table-view>
 	</layout-cell>
 	<layout-cell>
-	  <layout-vbox>
-	    <layout-cell>
-	      <widget-set id="main_view"></widget-set>
-	    </layout-cell>
-	    <layout-cell fixed="fixed">
-	      <input type="text" id="input_box"></input>
-	    </layout-cell>
-	  </layout-vbox>
+	  <widget-set id="main_view"></widget-set>
 	</layout-cell>
       </layout-hbox>
     </layout-container>
     <template id="template_main_view">
-      <layout-hbox>
+      <layout-vbox>
 	<layout-cell>
-	  <widget-list class="message_stream"></widget-list>
+	  <layout-hbox>
+	    <layout-cell>
+	      <widget-list class="message_stream"></widget-list>
+	    </layout-cell>
+	    <layout-cell fixed="fixed">
+	      <widget-list class="user_list"></widget-list>
+	    </layout-cell>
+	  </layout-hbox>
 	</layout-cell>
-	<layout-cell>
-	  <widget-list class="user_list"></widget-list>
+	<layout-cell fixed="fixed">
+	  <input type="text" id="input_box"></input>
 	</layout-cell>
-      </layout-hbox>
+      </layout-vbox>
     </template>
     <template id="template_message">
       <span class="message_date"></span>
