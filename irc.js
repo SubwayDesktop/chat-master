@@ -155,7 +155,7 @@ var login = {
     },
     callbacks: {
 	add_button_click: function(){
-	    var name = prompt(_('Name for new server:'));
+	    var name = prompt(_('Name for new config:'));
 	    if(!name)
 		alert(_("Name can't be empty."));
 	    else if(login.data[name])
