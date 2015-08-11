@@ -1,3 +1,8 @@
+td input[type="text"], td input[type="password"] {
+    float: right;
+}
+
+
 input[type="checkbox"] + label {
     vertical-align: top;
 }
@@ -5,4 +10,19 @@ input[type="checkbox"] + label {
 
 #login_box_title, #connect_button_wrapper {
     text-align: center;
+}
+
+
+#config_list > widget-tab > widget-text-button {
+    visibility: hidden;
+}
+
+
+#config_list > widget-tab:hover > widget-text-button {
+    visibility: visible;
+}
+
+
+.config_list_item_label[data-disabled] {
+    text-decoration: line-through;
 }
