@@ -82,6 +82,14 @@ var login = {
 	    textContent:'\u00d7',
 	    title: _('Remove this config')
 	});
+	var wrapper = create('span', {
+	    className: 'config_list_buttons_wrapper',
+	    children: [
+		toggle_button,
+		rename_button,
+		remove_button
+	    ]
+	});
 
 	toggle_button.addEventListener('click', function(ev){
 	    ev.stopPropagation();
@@ -118,9 +126,7 @@ var login = {
 
 	config_list.addTab(name, [
 	    label,
-	    toggle_button,
-	    rename_button,
-	    remove_button
+	    wrapper
 	]);
 	if(this.form_disabled)
 	    enableForm(login_form);
