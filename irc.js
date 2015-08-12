@@ -50,37 +50,54 @@ var login = {
 	self_signed: false,
 	sasl: false
     },
+    /**
+     * Initialization
+     * @return void
+     */
     init: function(){
 	this.data = {
 	    configs: {
 
 	    },
+	    /* note that this array is updated only when saving data to file */
 	    disabled: []
 	};
+	/* use set, which is more convenience to operate than array */
 	this.disabled = new Set();
+	/* the form is disabled if and only if there are 0 configurations */
+	this.form_disabled = false;
 	var data = DataStorage.record.read();
 	var names = Object.keys(data.configs);
 	for(let I of data.disabled)
 	    this.disabled.add(I);
 	for(let I of names){
 	    this.data.configs[I] = data.configs[I];
+	    /* set keep_data to true, prevent it from creating a empty one */
 	    this.add_config(I, true);
 	}
 	add_config_button.addEventListener('click', this.callbacks.add_button_click);
 	config_list.addEventListener('change', this.callbacks.tab_change);
 	login_form.addEventListener('change', this.callbacks.data_change);
 	if(names.length){
+	    /* the first configuration is current in tab bar */
 	    fillForm(login_form, data.configs[names[0]]);
 	}else{
 	    disableForm(login_form);
 	    this.form_disabled = true;
 	}
     },
+    /**
+     * Add a configuration
+     * @param name String
+     * @param keep_data Boolean
+     * @return void
+     */
     add_config: function(name, keep_data){
 	var label = create('span', {
 	    className: 'config_list_item_label',
 	    textContent: name
 	});
+	/* style for tab labels of disabled configurations */
 	if(keep_data && this.disabled.has(name))
 	    label.dataset.disabled = '';
 	var toggle_button = create('widget-text-button', {
@@ -96,6 +113,7 @@ var login = {
 	    textContent:'\u00d7',
 	    title: _('Remove this config')
 	});
+	/* wrap buttons together in order to float to right side of the tab */
 	var wrapper = create('span', {
 	    className: 'config_list_buttons_wrapper',
 	    children: [
@@ -149,19 +167,35 @@ var login = {
 	    this.data.configs[name] = clone(this.BLANK_CONFIG);
 	this.save_data();
     },
+    /**
+     * Save configurations to file
+     * @return void
+     */
     save_data: function(){
+	/* Array.from() has not supported yet */
 	var disabled_arr = [];
 	for(let I of this.disabled)
 	    disabled_arr.push(I);
 	this.data.disabled = disabled_arr;
 	DataStorage.record.write(this.data);
     },
+    /**
+     * Rename a configuration
+     * @param old_name String
+     * @param new_name String
+     * @return void
+     */
     rename_config: function(old_name, new_name){
 	this.data.configs[new_name] = this.data.configs[old_name];
 	delete this.data.configs[old_name];
 	config_list.changeSymbol(old_name, new_name);
 	this.save_data();
     },
+    /**
+     * Remove a configuration
+     * @param name String
+     * @return void
+     */
     remove_config: function(name){
 	config_list.removeTab(name);
 	delete this.data.configs[name];
@@ -202,6 +236,10 @@ var login = {
 };
 
 
+/**
+ * Initialization
+ * @return void
+ */
 function init(){
     /* create global objects for DOM nodes to be used */
     assignGlobalObjects({
