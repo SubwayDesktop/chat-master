@@ -8,6 +8,11 @@ input[type="checkbox"] + label {
 }
 
 
+.config_list {
+    overflow: auto;
+}
+
+
 .config_list_item_label[data-disabled] {
     text-decoration: line-through;
 }

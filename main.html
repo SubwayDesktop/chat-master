@@ -14,104 +14,99 @@
     <widget-modal-dialog id="login_modal_dialog">
       <layout-container>
 	<layout-vbox>
-	  <layout-cell fixed="fixed">
+	  <layout-cell>
 	    <div id="login_box_title" data-text="Login"></div>
 	  </layout-cell>
-	  <layout-cell fixed="fixed">
-	    <layout-hbox>
-	      <layout-cell fixed="fixed">
-		<layout-vbox>
-		  <layout-cell>
-		    <widget-tab-bar id="config_list" layout="vertical"></widget-tab-bar>
-		  </layout-cell>
-		  <layout-cell fixed="fixed">
-		    <button id="add_config_button" data-text="Add Config"></button>
-		  </layout-cell>
+	  <layout-hbox>
+	    <layout-vbox>
+	      <layout-cell grow="grow">
+		<widget-tab-bar id="config_list" layout="vertical"></widget-tab-bar>
 	      </layout-cell>
-	      <layout-cell fixed="fixed">
-		<form id="login_form">
-		  <table>
-		    <tr>
-		      <td data-text="Server: "></td>
-		      <td>
-			<input name="server" type="text" />
-		      </td>
-		    </tr>
-		    <tr>
-		      <td data-text="Port: "></td>
-		      <td>
-			<input name="port" type="text" />
-		      </td>
-		    </tr>
-		    <tr>
-		      <td data-text="Nick: "></td>
-		      <td>
-			<input name="nick" type="text" />
-		      </td>
-		    </tr>
-		    <tr>
-		      <td data-text="Username: "></td>
-		      <td>
-			<input name="username" type="text" />
-		      </td>
-		    </tr>
-		    <tr>
-		      <td data-text="Real Name: "></td>
-		      <td>
-			<input name="real_name" type="text" />
-		      </td>
-		    </tr>
-		    <tr>
-		      <td data-text="Password: "></td>
-		      <td>
-			<input name="password" type="password" />
-		      </td>
-		    </tr>
-		    <tr>
-		      <td colspan="2">
-			<input id="checkbox_ssl" name="ssl" type="checkbox" />
-			<label for="checkbox_ssl" data-text="Secure Connection"></label>
-			<input id="checkbox_self_signed" name="self_signed" type="checkbox" />
-			<label for="checkbox_self_signed" data-text="Self-signed" data-title="Accept certificates from a non trusted CA"></label>
-			<input id="checkbox_sasl" name="sasl" type="checkbox" />
-			<label for="checkbox_sasl" data-text="SASL"></label>
-		      </td>
-		    </tr>
-		  </table>
-		</form>
-		<div id="connect_button_wrapper">
-		  <button id="connect_button" data-text="Connent"></button>
-		  <button id="connect_all_button" data-text="Connent All"></button>
-		</div>
+	      <layout-cell>
+		<button id="add_config_button" data-text="Add Config"></button>
 	      </layout-cell>
-	    </layout-hbox>
-	  </layout-cell>
+	    </layout-vbox>
+	    <layout-cell>
+	      <form id="login_form">
+		<table>
+		  <tr>
+		    <td data-text="Server: "></td>
+		    <td>
+		      <input name="server" type="text" />
+		    </td>
+		  </tr>
+		  <tr>
+		    <td data-text="Port: "></td>
+		    <td>
+		      <input name="port" type="text" />
+		    </td>
+		  </tr>
+		  <tr>
+		    <td data-text="Nick: "></td>
+		    <td>
+		      <input name="nick" type="text" />
+		    </td>
+		  </tr>
+		  <tr>
+		    <td data-text="Username: "></td>
+		    <td>
+		      <input name="username" type="text" />
+		    </td>
+		  </tr>
+		  <tr>
+		    <td data-text="Real Name: "></td>
+		    <td>
+		      <input name="real_name" type="text" />
+		    </td>
+		  </tr>
+		  <tr>
+		    <td data-text="Password: "></td>
+		    <td>
+		      <input name="password" type="password" />
+		    </td>
+		  </tr>
+		  <tr>
+		    <td colspan="2">
+		      <input id="checkbox_ssl" name="ssl" type="checkbox" />
+		      <label for="checkbox_ssl" data-text="Secure Connection"></label>
+		      <input id="checkbox_self_signed" name="self_signed" type="checkbox" />
+		      <label for="checkbox_self_signed" data-text="Self-signed" data-title="Accept certificates from a non trusted CA"></label>
+		      <input id="checkbox_sasl" name="sasl" type="checkbox" />
+		      <label for="checkbox_sasl" data-text="SASL"></label>
+		    </td>
+		  </tr>
+		</table>
+	      </form>
+	      <div id="connect_button_wrapper">
+		<button id="connect_button" data-text="Connent"></button>
+		<button id="connect_all_button" data-text="Connent All"></button>
+	      </div>
+	    </layout-cell>
+	  </layout-hbox>
 	</layout-vbox>
       </layout-container>
     </widget-modal-dialog>
     <layout-container>
       <layout-hbox>
-	<layout-cell fixed="fixed">
+	<layout-cell>
 	  <widget-table-view id="channel_list"></widget-table-view>
 	</layout-cell>
-	<layout-cell>
+	<layout-cell grow="grow">
 	  <widget-set id="main_view"></widget-set>
 	</layout-cell>
       </layout-hbox>
     </layout-container>
     <template id="template_main_view">
       <layout-vbox>
+	<layout-hbox>
+	  <layout-cell grow="grow">
+	    <widget-list class="message_box"></widget-list>
+	  </layout-cell>
+	  <layout-cell>
+	    <widget-list class="user_list"></widget-list>
+	  </layout-cell>
+	</layout-hbox>
 	<layout-cell>
-	  <layout-hbox>
-	    <layout-cell>
-	      <widget-list class="message_stream"></widget-list>
-	    </layout-cell>
-	    <layout-cell fixed="fixed">
-	      <widget-list class="user_list"></widget-list>
-	    </layout-cell>
-	  </layout-hbox>
-	</layout-cell>
-	<layout-cell fixed="fixed">
 	  <input type="text" id="input_box"></input>
 	</layout-cell>
       </layout-vbox>
