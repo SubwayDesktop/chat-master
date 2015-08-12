@@ -24,17 +24,20 @@ var login_form, config_list, add_config_button, connect_button, connect_all_butt
 
 var login = {
     DEFAULT_DATA: {
-	freenode: {
-	    server: 'irc.freenode.net',
-	    port: '6667',
-	    nick: 'benzene',
-	    username: 'C6H6',
-	    real_name: 'Chat Master Test',
-	    password: '',
-	    ssl: false,
-	    self_signed: false,
-	    sasl: false
-	}
+	configs: {
+	    freenode: {
+		server: 'irc.freenode.net',
+		port: '6667',
+		nick: 'benzene',
+		username: 'C6H6',
+		real_name: 'Chat Master Test',
+		password: '',
+		ssl: false,
+		self_signed: false,
+		sasl: false
+	    }
+	},
+	disabled: []
     },
     BLANK_CONFIG: {
 	server: '',
@@ -48,30 +51,41 @@ var login = {
 	sasl: false
     },
     init: function(){
-	this.data = {};
+	this.data = {
+	    configs: {
+
+	    },
+	    disabled: []
+	};
 	this.disabled = new Set();
 	var data = DataStorage.record.read();
-	var names = Object.keys(data);
-	if(!names.length){
-	    data = clone(this.DEFAULT_DATA);
-	    names = Object.keys(data);
-	}
+	var names = Object.keys(data.configs);
+	for(let I of data.disabled)
+	    this.disabled.add(I);
 	for(let I of names){
-	    this.data[I] = clone(data[I]);
+	    this.data.configs[I] = data.configs[I];
 	    this.add_config(I, true);
 	}
 	add_config_button.addEventListener('click', this.callbacks.add_button_click);
 	config_list.addEventListener('change', this.callbacks.tab_change);
 	login_form.addEventListener('change', this.callbacks.data_change);
-	fillForm(login_form, data[names[0]]);
+	if(names.length){
+	    fillForm(login_form, data.configs[names[0]]);
+	}else{
+	    disableForm(login_form);
+	    this.form_disabled = true;
+	}
     },
     add_config: function(name, keep_data){
 	var label = create('span', {
 	    className: 'config_list_item_label',
 	    textContent: name
 	});
+	if(keep_data && this.disabled.has(name))
+	    label.dataset.disabled = '';
 	var toggle_button = create('widget-text-button', {
-	    textContent: '\u2611',
+	    textContent: (keep_data && this.disabled.has(name))?
+		'\u2610': '\u2611',
 	    title: _('Toggle between enabled and disabled in Connect All')
 	});
 	var rename_button = create('widget-text-button', {
@@ -104,6 +118,7 @@ var login = {
 		delete label.dataset.disabled;
 		this.textContent = '\u2611';
 	    }
+	    login.save_data();
 	});
 
 	rename_button.addEventListener('click', function(ev){
@@ -131,27 +146,34 @@ var login = {
 	if(this.form_disabled)
 	    enableForm(login_form);
 	if(!keep_data)
-	    this.data[name] = clone(this.BLANK_CONFIG);
-	this.save_config();
+	    this.data.configs[name] = clone(this.BLANK_CONFIG);
+	this.save_data();
     },
-    save_config: function(){
+    save_data: function(){
+	var disabled_arr = [];
+	for(let I of this.disabled)
+	    disabled_arr.push(I);
+	this.data.disabled = disabled_arr;
 	DataStorage.record.write(this.data);
     },
     rename_config: function(old_name, new_name){
-	this.data[new_name] = this.data[old_name];
-	delete this.data[old_name];
+	this.data.configs[new_name] = this.data.configs[old_name];
+	delete this.data.configs[old_name];
 	config_list.changeSymbol(old_name, new_name);
-	this.save_config();
+	this.save_data();
     },
     remove_config: function(name){
 	config_list.removeTab(name);
-	delete this.data[name];
-	if(!Object.keys(this.data).length){
+	delete this.data.configs[name];
+	if(this.disabled.has(name)){
+	    this.diabled.delete(name);
+	}
+	if(!Object.keys(this.data.configs).length){
 	    fillForm(login_form, this.BLANK_CONFIG);
 	    disableForm(login_form);
 	    this.form_disabled = true;
 	}
-	this.save_config();
+	this.save_data();
     },
     connent: function(){
 
@@ -164,17 +186,17 @@ var login = {
 	    var name = prompt(_('Name for new config:'));
 	    if(!name)
 		alert(_("Name can't be empty."));
-	    else if(login.data[name])
+	    else if(login.data.configs[name])
 		alert(_('The name has already used.'));
 	    else
 		login.add_config(name);
 	},
 	tab_change: function(ev){
-	    fillForm(login_form, login.data[ev.detail.symbol]);
+	    fillForm(login_form, login.data.configs[ev.detail.symbol]);
 	},
 	data_change: function(){
-	    login.data[config_list.currentTab] = fetchFormData(login_form);
-	    login.save_config();
+	    login.data.configs[config_list.currentTab] = fetchFormData(login_form);
+	    login.save_data();
 	}
     }
 };
@@ -192,8 +214,8 @@ function init(){
 
     /* initialize SubwayUI */
     DataStorage.init({
-	record: true,
 	data: true,
+	record: login.DEFAULT_DATA,
 	settings: [
 	    {
 		category: 'Chat',
