@@ -88,8 +88,8 @@ var login = {
     },
     /**
      * Add a configuration
-     * @param name String
-     * @param keep_data Boolean
+     * @param String name
+     * @param Boolean keep_data
      * @return void
      */
     add_config: function(name, keep_data){
@@ -181,8 +181,8 @@ var login = {
     },
     /**
      * Rename a configuration
-     * @param old_name String
-     * @param new_name String
+     * @param String old_name
+     * @param String new_name
      * @return void
      */
     rename_config: function(old_name, new_name){
@@ -193,7 +193,7 @@ var login = {
     },
     /**
      * Remove a configuration
-     * @param name String
+     * @param String name
      * @return void
      */
     remove_config: function(name){
