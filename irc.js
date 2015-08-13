@@ -87,7 +87,7 @@ var login = {
 	}
     },
     /**
-     * Add a configuration
+     * Adds a configuration
      * @param String name
      * @param Boolean keep_data
      * @return void
@@ -168,7 +168,7 @@ var login = {
 	this.save_data();
     },
     /**
-     * Save configurations to file
+     * Saves configurations to file
      * @return void
      */
     save_data: function(){
@@ -180,7 +180,7 @@ var login = {
 	DataStorage.record.write(this.data);
     },
     /**
-     * Rename a configuration
+     * Renames a configuration
      * @param String old_name
      * @param String new_name
      * @return void
@@ -192,7 +192,7 @@ var login = {
 	this.save_data();
     },
     /**
-     * Remove a configuration
+     * Removes a configuration
      * @param String name
      * @return void
      */
