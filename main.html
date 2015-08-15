@@ -11,7 +11,7 @@
     <script type="text/javascript" src="irc.js"></script>
   </head>
   <body>
-    <widget-modal-dialog id="login_modal_dialog">
+    <widget-modal-dialog id="login_dialog">
       <layout-container>
 	<layout-vbox>
 	  <layout-cell>
@@ -86,29 +86,27 @@
 	</layout-vbox>
       </layout-container>
     </widget-modal-dialog>
-    <layout-container>
+    <layout-container full="full">
       <layout-hbox>
 	<layout-cell>
-	  <widget-table-view id="channel_list"></widget-table-view>
+	  <widget-table-view id="channel_switcher"></widget-table-view>
 	</layout-cell>
-	<layout-cell grow="grow">
-	  <widget-set id="main_view"></widget-set>
-	</layout-cell>
+	<widget-set id="main_view"></widget-set>
       </layout-hbox>
     </layout-container>
     <template id="template_main_view">
-      <layout-vbox>
-	<layout-hbox>
+      <layout-vbox style="flex-grow: 1;">
+	<layout-hbox grow="grow">
 	  <layout-cell grow="grow">
-	    <widget-list class="message_box"></widget-list>
+	    <widget-list class="msg_stream"></widget-list>
 	  </layout-cell>
 	  <layout-cell>
 	    <widget-list class="user_list"></widget-list>
 	  </layout-cell>
 	</layout-hbox>
-	<layout-cell>
-	  <input type="text" id="input_box"></input>
-	</layout-cell>
+	<layout-hbox>
+	  <input type="text" id="input_box" style="flex-grow: 1;"></input>
+	</layout-hbox>
       </layout-vbox>
     </template>
     <template id="template_message">

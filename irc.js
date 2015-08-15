@@ -19,7 +19,29 @@ var GetMAC = require('getmac'); /* for color hash */
 var gui, win, tray, popup_menu;
 
 /* DOM nodes */
-var login_form, config_list, add_config_button, connect_button, connect_all_button;
+/* login */
+var login_dialog, login_form, config_list, add_config_button, connect_button, connect_all_button;
+/* chat */
+var channel_switcher, main_view;
+/* templates */
+var template_main_view, template_message;
+
+
+var date = {
+    getTime: function(){
+	var date = new Date();
+	var hour = date.getHours();
+	var minute = date.getMinutes();
+	var second = date.getSeconds();
+	if(hour < 10)
+	    hour = '0' + hour;
+	if(minute < 10)
+	    minute = '0' + minute;
+	if(second < 10)
+	    second = '0' + second;
+	return printf('%1:%2:%3', hour, minute, second);
+    }    
+};
 
 
 var login = {
@@ -78,6 +100,8 @@ var login = {
 	add_config_button.addEventListener('click', this.callbacks.add_button_click);
 	config_list.addEventListener('change', this.callbacks.tab_change);
 	login_form.addEventListener('change', this.callbacks.data_change);
+	connect_button.addEventListener('click', this.callbacks.connect);
+	connect_all_button.addEventListener('click', this.callbacks.connect_all);
 	if(names.length){
 	    /* the first configuration is current in tab bar */
 	    fillForm(login_form, data.configs[names[0]]);
@@ -146,6 +170,8 @@ var login = {
 		alert(_("Name can't be empty"));
 	    }else if(new_name == name){
 		return;
+	    }else if(this.data.configs[new_name]){
+		alert(_('The name has already used.'));
 	    }else{
 		label.textContent = new_name;
 		login.rename_config(name, new_name);
@@ -209,12 +235,6 @@ var login = {
 	}
 	this.save_data();
     },
-    connent: function(){
-
-    },
-    connect_all: function(){
-
-    },
     callbacks: {
 	add_button_click: function(){
 	    var name = prompt(_('Name for new config:'));
@@ -231,9 +251,166 @@ var login = {
 	data_change: function(){
 	    login.data.configs[config_list.currentTab] = fetchFormData(login_form);
 	    login.save_data();
+	},
+	/* Connects to server with the current configuration */
+	connect: function(){
+	    var configs = {};
+	    var name = config_list.currentTab;
+	    configs[name] = login.data.configs[name];
+	    chat.connect(configs);
+	    hide(login_dialog);
+	},
+	/* Connects to the servers of all enabled configurations */
+	connect_all: function(){
+	    chat.connect(login.data.configs);
+	    hide(login_dialog);
 	}
     }
 };
+
+
+var chat = {
+    /**
+     * Connects to servers and initialize the channel switcher (called once)
+     * @param Object configs
+     * @return void
+     */
+    connect: function(configs){
+	this.connections = {};
+
+	channel_switcher.init({
+	    selectionMode: 'single'
+	});
+	
+	var settings = DataStorage.settings.get();
+	var names = Object.keys(configs);
+	for(let name of names){
+	    let config = configs[name];
+	    let options = {
+		userName: config.username,
+		realName: config.real_name,
+		port: config.port? config.port: 6667,
+		localAddress: null,
+		debug: true,
+		showErrors: true,
+		autoRejoin: false,
+		autoConnect: false,
+		channels: [],
+		secure: config.ssl,
+		selfSigned: config.self_signed,
+		certExpired: false,
+		floodProtection: settings.flood_protection,
+		floodProtectionDelay: settings.flood_protection_delay,
+		sasl: config.sasl,
+		stripColors: settings.strip_colors,
+		channelPrefixes: "&#",
+		messageSplit: 512,
+		encoding: 'UTF-8' /* TODO: settings */
+	    };
+	    if(config.password)
+		options.password = config.password;
+	    let client = new IRC.Client(config.server, config.nick, options);
+	    /* Save data on client object
+	     * String client.name
+	     * - The name of corresponding configuration (aka connection)
+	     */
+	    client.name = name;
+
+	    let view = inst_div(template_main_view);
+	    let msg_stream = view.querySelector('.msg_stream');
+	    let input_box = view.querySelector('.input_box');
+	    main_view.addWidget(view);
+	    
+	    let label = create('span', name);
+	    channel_switcher.addRow(view, null, [
+		[label]
+	    ]);
+
+	    channel_switcher.addEventListener('change', this.callbacks.change_view);
+
+	    client.on('registered', this.callbacks.registered);
+	    client.on('join', this.callbacks.join);
+	    client.on('message', this.callbacks.message);
+	    
+	    this.connections[name] = {
+		client: client,
+		view: view,
+		msg_stream: msg_stream,
+		input_box: input_box,
+		channels: {}
+	    };
+
+	    /* retryCount = 0 */
+	    client.connect(0);
+	}
+	channel_switcher.currentRow = this.connections[names[0]].view;
+    },
+    add_channel: function(connection, channel){
+	var name = connection;
+	
+	var view = inst_div(template_main_view);
+	var msg_stream = view.querySelector('.msg_stream');
+	var user_list = view.querySelector('.user_list');
+	var input_box = view.querySelector('.input_box');
+	main_view.addWidget(view);
+	
+	var label = create('span', channel);
+	channel_switcher.addRow(view, this.connections[name].view, [
+	    [label]
+	]);
+
+	this.connections[name].channels[channel] = {
+	    view: view,
+	    msg_stream: msg_stream,
+	    user_list: user_list,
+	    input_box: input_box
+	};
+    },
+    push_message: function(type, from, text, msg_stream){
+	var time = printf('(%1)', date.getTime());
+	var content = inst(template_message, {
+	    '.message_date': time,
+	    '.message_from': from,
+	    '.message_body': format_message(text)
+	});
+	var msg = create('div', {
+	    className: 'message',
+	    children: [content]
+	});
+	msg_stream.insert(msg);
+    },
+    callbacks: {
+	change_view: function(ev){
+	    var view = ev.detail.symbol;
+	    main_view.currentWidget = view;
+	},
+	registered: function(){
+	    var con = chat.connections[this.name];
+	    console.log(printf('Client %1 connected!', this.name));
+	    chat.push_message('info', '', _('Connected'), con.msg_stream);
+	},
+	join: function(channel, nick, message){
+	    var con = chat.connections[this.name];
+	    if(nick == con.client.nick)
+		chat.add_channel(this.name, channel);
+	    /* TODO: else: update user list */
+	    chat.push_message('info', '',
+			      printf(_('%1 joined %2'), nick, channel),
+			      con.channels[channel].msg_stream);
+	},
+	message: function(from, to, text, message){
+	    var con = chat.connections[this.name];
+	    if(con.channels[to])
+		chat.push_message('user_msg', from, text,
+				  con.channels[to].msg_stream);
+	    /* TODO: other situations */
+	}
+    }
+};
+
+
+/* bind to node context */
+global.chat = chat;
 
 
 /**
@@ -243,11 +420,19 @@ var login = {
 function init(){
     /* create global objects for DOM nodes to be used */
     assignGlobalObjects({
+	/* login */
+	login_dialog: '#login_dialog',
 	config_list: '#config_list',
 	add_config_button: '#add_config_button',
 	connect_button: '#connect_button',
 	connect_all_button: '#connect_all_button',
-	login_form: '#login_form'
+	login_form: '#login_form',	
+	/* chat */
+	channel_switcher: '#channel_switcher',
+	main_view: '#main_view',
+	/* templates */
+	template_main_view: '#template_main_view',
+	template_message: '#template_message'
     });
 
     /* initialize SubwayUI */

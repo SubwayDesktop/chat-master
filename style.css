@@ -36,3 +36,10 @@ input[type="checkbox"] + label {
 #config_list > widget-tab:hover widget-text-button {
     visibility: visible;
 }
+
+
+#main_view, #main_view > div {
+    display: flex;
+    flex-grow: 1;
+    flex-shrink: 0;
+}
