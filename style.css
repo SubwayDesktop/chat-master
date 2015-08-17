@@ -1,3 +1,8 @@
+body {
+    font-family: sans-serif;
+}
+
+
 td input[type="text"], td input[type="password"] {
     float: right;
 }
@@ -5,11 +10,6 @@ td input[type="text"], td input[type="password"] {
 
 input[type="checkbox"] + label {
     vertical-align: top;
-}
-
-
-.config_list {
-    overflow: auto;
 }
 
 
@@ -42,4 +42,14 @@ input[type="checkbox"] + label {
     display: flex;
     flex-grow: 1;
     flex-shrink: 0;
+}
+
+
+.message {
+    word-wrap: break-word;
+}
+
+
+#input_box {
+    flex-grow: 1;
 }

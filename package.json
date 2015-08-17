@@ -1,8 +1,9 @@
 {
-	"name": "chat-master",
-	"main": "main.html",
-	"window": {
-    		"toolbar": true,
-		"position": "center"
-  	}
+    "name": "chat-master",
+    "main": "main.html",
+    "window": {
+	"toolbar": false,
+	"position": "center"
+    },
+    "js-flags": "--harmony"
 }

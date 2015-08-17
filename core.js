@@ -386,7 +386,7 @@ var chat = {
 	},
 	registered: function(){
 	    var con = chat.connections[this.name];
-	    console.log(printf('Client %1 connected!', this.name));
+	    console.log(printf('Client %1 connected.', this.name));
 	    chat.push_message('info', '', _('Connected'), con.msg_stream);
 	},
 	join: function(channel, nick, message){
