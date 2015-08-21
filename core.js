@@ -27,6 +27,11 @@ var channel_switcher, main_view;
 var template_main_view, template_message;
 
 
+/* ES6 Module is not implemented in any browser now.
+ * We use separate objects as a bad "polyfill"
+ */
+
+
 var date = {
     /**
      * Returns a string contains formatted time
@@ -46,11 +51,6 @@ var date = {
 	return printf('%1:%2:%3', hour, minute, second);
     }    
 };
-
-
-/* ES6 Module is not implemented in any browser now.
- * We use separate objects as a bad "polyfill"
- */
 
 
 var login = {
