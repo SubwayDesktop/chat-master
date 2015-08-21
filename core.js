@@ -329,6 +329,15 @@ var chat = {
 	    let msg_stream = view.querySelector('.msg_stream');
 	    let input_box = view.querySelector('.input_box');
 	    main_view.addWidget(view);
+
+	    /* Save data on DOM nodes:
+	     * String view.connection
+	     * - The way to know the current connection
+	     * String view.channel
+	     * - The way to know the current channel name
+	     */
+	    view.connection = name;
+	    view.channel = '';
 	    
 	    let label = create('span', name);
 	    channel_switcher.addRow(view, null, [
@@ -336,6 +345,8 @@ var chat = {
 	    ]);
 
 	    channel_switcher.addEventListener('change', this.callbacks.change_view);
+
+	    input_box.addEventListener('keyup', this.callbacks.inputbox_keyup);
 
 	    client.on('registered', this.callbacks.registered);
 	    client.on('join', this.callbacks.join);
@@ -368,11 +379,22 @@ var chat = {
 	var user_list = view.querySelector('.user_list');
 	var input_box = view.querySelector('.input_box');
 	main_view.addWidget(view);
+
+	/* Save data on DOM nodes:
+	 * String view.connection
+	 * - The way to know the current connection
+	 * String view.channel
+	 * - The way to know the current channel name
+	 */
+	view.connection = connection;
+	view.channel = channel;
 	
 	var label = create('span', channel);
 	channel_switcher.addRow(view, this.connections[name].view, [
 	    [label]
 	]);
+
+	input_box.addEventListener('keyup', this.callbacks.inputbox_keyup);
 
 	this.connections[name].channels[channel] = {
 	    view: view,
@@ -393,7 +415,7 @@ var chat = {
 	var time = printf('(%1)', date.getTime());
 	var content = inst(template_message, {
 	    '.message_date': time,
-	    '.message_from': from,
+	    '.message_from': from? (from + ':'): '',
 	    '.message_body': format_message(text)
 	});
 	var msg = create('div', {
@@ -401,6 +423,36 @@ var chat = {
 	    children: [content]
 	});
 	msg_stream.insert(msg);
+    },
+    /**
+     * Executes an IRC command on current connection and current channel
+     * @param String command
+     * @param String args
+     */
+    exec: function(command, args){
+	var current_connection = channel_switcher.currentRow.connection;
+	var current_channel = channel_switcher.currentRow.channel;
+	var con = this.connections[current_connection];
+	var client = con.client;
+	var msg_stream;
+	if(current_channel)
+	    msg_stream = con.channels[current_channel].msg_stream;
+	else
+	    msg_stream = con.msg_stream;
+	switch(command){
+	case 'say':
+	    if(current_channel){
+		client.say(current_channel, args);
+		this.push_message('self', client.nick, args, msg_stream);
+	    }
+	    /* else */
+	    break;
+	case 'join':
+	    for(let channel of args.split(' '))
+		client.join(channel);
+	    break;
+	/* part, msg, action, mode ... */
+	}
     },
     callbacks: {
 	change_view: function(ev){
@@ -427,6 +479,25 @@ var chat = {
 		chat.push_message('user_msg', from, text,
 				  con.channels[to].msg_stream);
 	    /* TODO: other situations */
+	},
+	inputbox_keyup: function(ev){
+	    if(ev.keyCode == 13){
+		let text = this.value;
+		if(text.startsWith('/')){
+		    let pos = text.indexOf(' ');
+		    if(pos == -1)
+			pos = text.length;
+		    let cmd = text.slice(1, pos);
+		    let args = text.slice(pos, text.length);
+		    chat.exec(cmd, args);
+		}else{
+		    chat.exec('say', text);
+		}
+		this.value = '';
+		/* input history */
+	    }else if(ev.keyCode == 9){
+		/* tab completion */
+	    }
 	}
     }
 };
