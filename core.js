@@ -28,6 +28,10 @@ var template_main_view, template_message;
 
 
 var date = {
+    /**
+     * Returns a string contains formatted time
+     * @return String
+     */
     getTime: function(){
 	var date = new Date();
 	var hour = date.getHours();
@@ -42,6 +46,11 @@ var date = {
 	return printf('%1:%2:%3', hour, minute, second);
     }    
 };
+
+
+/* ES6 Module is not implemented in any browser now.
+ * We use separate objects as a bad "polyfill"
+ */
 
 
 var login = {
@@ -345,6 +354,12 @@ var chat = {
 	}
 	channel_switcher.currentRow = this.connections[names[0]].view;
     },
+    /**
+     * Adds a main view for new channel
+     * @param String connection
+     * @param String channel
+     * @return void
+     */
     add_channel: function(connection, channel){
 	var name = connection;
 	
@@ -366,6 +381,14 @@ var chat = {
 	    input_box: input_box
 	};
     },
+    /**
+     * Adds a new message line into the message stream box "msg_stream"
+     * @param String type
+     * @param String from
+     * @param String text
+     * @param Widget.List msg_stream
+     * @return void
+     */
     push_message: function(type, from, text, msg_stream){
 	var time = printf('(%1)', date.getTime());
 	var content = inst(template_message, {
