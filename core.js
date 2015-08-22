@@ -279,6 +279,19 @@ var login = {
 
 
 var chat = {
+    /* The structure to record data corresponding to a tab */
+    ViewData: function(connection, channel){
+	this.connection = connection;
+	this.channel = channel;
+	assignMethods(chat.ViewData, {
+	    get: function(){
+		if(this.channel)
+		    return chat.connections[this.connection].channels[this.channel];
+		else
+		    return chat.connections[this.connection];
+	    }
+	});
+    },
     /**
      * Connects to servers and initialize the channel switcher (called once)
      * @param Object configs
@@ -286,6 +299,11 @@ var chat = {
      */
     connect: function(configs){
 	this.connections = {};
+	/* this.view_data: Object: Hash<Symbol, this.ViewData>
+	 * We have to use symbol because we need primitive as unique
+	 * identifiers for items (rows) of Widget.TableView
+	 */
+	this.view_data = {};
 
 	channel_switcher.init({
 	    selectionMode: 'single'
@@ -325,22 +343,15 @@ var chat = {
 	     */
 	    client.name = name;
 
+	    let symbol = Symbol(name);
+
 	    let view = inst_div(template_main_view);
 	    let msg_stream = view.querySelector('.msg_stream');
 	    let input_box = view.querySelector('.input_box');
 	    main_view.addWidget(view);
-
-	    /* Save data on DOM nodes:
-	     * String view.connection
-	     * - The way to know the current connection
-	     * String view.channel
-	     * - The way to know the current channel name
-	     */
-	    view.connection = name;
-	    view.channel = '';
 	    
 	    let label = create('span', name);
-	    channel_switcher.addRow(view, null, [
+	    channel_switcher.addRow(symbol, null, [
 		[label]
 	    ]);
 
@@ -351,8 +362,11 @@ var chat = {
 	    client.on('registered', this.callbacks.registered);
 	    client.on('join', this.callbacks.join);
 	    client.on('message', this.callbacks.message);
+
+	    this.view_data[symbol] = new this.ViewData(name);
 	    
 	    this.connections[name] = {
+		symbol: symbol,
 		client: client,
 		view: view,
 		msg_stream: msg_stream,
@@ -363,7 +377,7 @@ var chat = {
 	    /* retryCount = 0 */
 	    client.connect(0);
 	}
-	channel_switcher.currentRow = this.connections[names[0]].view;
+	channel_switcher.currentRow = this.connections[names[0]].symbol;
     },
     /**
      * Adds a main view for new channel
@@ -373,6 +387,7 @@ var chat = {
      */
     add_channel: function(connection, channel){
 	var name = connection;
+	var symbol = Symbol(printf('%1 %2', name, channel));
 	
 	var view = inst_div(template_main_view);
 	var msg_stream = view.querySelector('.msg_stream');
@@ -380,23 +395,17 @@ var chat = {
 	var input_box = view.querySelector('.input_box');
 	main_view.addWidget(view);
 
-	/* Save data on DOM nodes:
-	 * String view.connection
-	 * - The way to know the current connection
-	 * String view.channel
-	 * - The way to know the current channel name
-	 */
-	view.connection = connection;
-	view.channel = channel;
-	
 	var label = create('span', channel);
-	channel_switcher.addRow(view, this.connections[name].view, [
+	channel_switcher.addRow(symbol, this.connections[name].symbol, [
 	    [label]
 	]);
 
 	input_box.addEventListener('keyup', this.callbacks.inputbox_keyup);
 
+	this.view_data[symbol] = new this.ViewData(connection, channel);
+
 	this.connections[name].channels[channel] = {
+	    symbol: symbol,
 	    view: view,
 	    msg_stream: msg_stream,
 	    user_list: user_list,
@@ -430,15 +439,12 @@ var chat = {
      * @param String args
      */
     exec: function(command, args){
-	var current_connection = channel_switcher.currentRow.connection;
-	var current_channel = channel_switcher.currentRow.channel;
+	var data = this.view_data[channel_switcher.currentRow];
+	var current_connection = data.connection;
+	var current_channel = data.channel;
 	var con = this.connections[current_connection];
 	var client = con.client;
-	var msg_stream;
-	if(current_channel)
-	    msg_stream = con.channels[current_channel].msg_stream;
-	else
-	    msg_stream = con.msg_stream;
+	var msg_stream = data.get().msg_stream;
 	switch(command){
 	case 'say':
 	    if(current_channel){
@@ -456,8 +462,7 @@ var chat = {
     },
     callbacks: {
 	change_view: function(ev){
-	    var view = ev.detail.symbol;
-	    main_view.currentWidget = view;
+	    main_view.currentWidget = chat.view_data[ev.detail.symbol].get().view;
 	},
 	registered: function(){
 	    var con = chat.connections[this.name];
@@ -501,10 +506,6 @@ var chat = {
 	}
     }
 };
-
-
-/* bind to node context */
-global.chat = chat;
 
 
 /**
