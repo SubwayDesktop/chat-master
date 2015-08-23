@@ -13,7 +13,6 @@
 
 /* load node.js modules */
 var IRC = require('irc');
-var GetMAC = require('getmac'); /* for color hash */
 
 /* node-webkit API */
 var gui, win, tray, popup_menu;
@@ -50,6 +49,63 @@ var date = {
 	    second = '0' + second;
 	return printf('%1:%2:%3', hour, minute, second);
     }    
+};
+
+
+var color = {
+    /**
+     * Initialization
+     * @return void
+     */
+    init: function(){
+	/* Object: Hash<String, String> */
+	this.map = [];
+	this.mac_addr = '';
+
+	/* get local mac address for color hash */
+	var GetMAC = require('getmac');
+	GetMAC.getMac(function(err, mac){
+	    if(err){
+		console.log(err);
+		return;
+	    }
+	    color.mac_addr = mac;
+	});
+    },
+    /**
+     * Checks if a color is valid (R, G, B <= 144) in light theme
+     * @param Array<Number> rgb
+     * @return Boolean
+     */
+    check: function(rgb){
+	var i, count = 0;
+	for(i=0; i<3; i++)
+	    if(rgb[i] > 144)
+		count++;
+	if(count < 2)
+	    return true;
+	return false;
+    },
+    /**
+     * Gets color of a nick (format: #rrggbb)
+     * @param String nick
+     * @return String
+     */
+    get: function(nick){
+	if(this.map[nick])
+	    return this.map[nick];
+	var hash = md5(nick + this.mac_addr);
+	var color_str, pos = 0;
+	var rgb = [255, 255, 255];
+	while(!this.check(rgb) && pos+6 <= hash.length){
+	    color_str = hash.slice(pos, pos+6);
+	    rgb[0] = Number.parseInt(color_str[0]+color_str[1], 16);
+	    rgb[1] = Number.parseInt(color_str[2]+color_str[3], 16);
+	    rgb[2] = Number.parseInt(color_str[4]+color_str[5], 16);
+	    pos++;
+	}
+	return (this.map[nick] = '#' + color_str);
+    }
 };
 
 
@@ -316,7 +372,7 @@ var chat = {
 	    let options = {
 		userName: config.username,
 		realName: config.real_name,
-		port: config.port? config.port: 6667,
+		port: (config.port || 6667),
 		localAddress: null,
 		debug: true,
 		showErrors: true,
@@ -423,8 +479,18 @@ var chat = {
     push_message: function(type, from, text, msg_stream){
 	var time = printf('(%1)', date.getTime());
 	var content = inst(template_message, {
-	    '.message_date': time,
-	    '.message_from': from? (from + ':'): '',
+	    '.message_date': {
+		textContent: time,
+		style: {
+		    color: (from && color.get(from))
+		}
+	    },
+	    '.message_from': {
+		textContent: (from && (from + ':')),
+		style: {
+		    color: (from && color.get(from))
+		}
+	    },
 	    '.message_body': format_message(text)
 	});
 	var msg = create('div', {
@@ -571,6 +637,9 @@ function init(){
 
     /* initialize client */
     login.init();
+
+    /* initialize color */
+    color.init();
     
     /* load node-webkit API */
     gui = require('nw.gui');
