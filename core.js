@@ -454,8 +454,9 @@ var chat = {
 	main_view.addWidget(view);
 
 	var label = create('span', channel);
+	var counter = create('span');
 	channel_switcher.addRow(symbol, this.connections[name].symbol, [
-	    [label]
+	    [label, counter]
 	]);
 
 	input_box.addEventListener('keyup', this.callbacks.inputbox_keyup);
@@ -467,7 +468,8 @@ var chat = {
 	    view: view,
 	    msg_stream: msg_stream,
 	    user_list: user_list,
-	    input_box: input_box
+	    input_box: input_box,
+	    counter: counter
 	};
     },
     /**
@@ -490,10 +492,12 @@ var chat = {
      * @param String type
      * @param String from
      * @param String text
-     * @param Widget.List msg_stream
+     * @param Symbol symbol
      * @return void
      */
-    push_message: function(type, from, text, msg_stream){
+    push_message: function(type, from, text, symbol){
+	var view_obj = this.view_data[symbol].get();
+	var msg_stream = view_obj.msg_stream;
 	var time = printf('(%1)', date.getTime());
 	var bottom = this.check_scroll(msg_stream);
 	var content = inst(template_message, {
@@ -518,6 +522,17 @@ var chat = {
 	msg_stream.insert(msg);
 	if(bottom)
 	    msg_stream.scrollTop = msg_stream.scrollHeight;
+	if(type == 'user_msg' && view_obj.counter
+	   && symbol != channel_switcher.currentRow){
+	    let counter = view_obj.counter;
+	    let count;
+	    if(counter.dataset.count)
+		count = Number.parseInt(counter.dataset.count) + 1;
+	    else
+		count = 1;
+	    counter.dataset.count = count;
+	    counter.textContent = printf(' (%1)', count);
+	}
     },
     /**
      * Executes an IRC command on current connection and current channel
@@ -525,17 +540,17 @@ var chat = {
      * @param String args
      */
     exec: function(command, args){
-	var data = this.view_data[channel_switcher.currentRow];
+	var symbol = channel_switcher.currentRow;
+	var data = this.view_data[symbol];
 	var current_connection = data.connection;
 	var current_channel = data.channel;
 	var con = this.connections[current_connection];
 	var client = con.client;
-	var msg_stream = data.get().msg_stream;
 	switch(command){
 	case 'say':
 	    if(current_channel){
 		client.say(current_channel, args);
-		this.push_message('self', client.nick, args, msg_stream);
+		this.push_message('self', client.nick, args, symbol);
 	    }
 	    /* else */
 	    break;
@@ -553,11 +568,15 @@ var chat = {
 	    main_view.currentWidget = view_obj.view;
 	    if(msg_stream.dataset.bottom == 'true')
 		msg_stream.scrollTop = msg_stream.scrollHeight;
+	    if(view_obj.counter){
+		view_obj.counter.dataset.count = '0';
+		view_obj.counter.textContent = '';
+	    }
 	},
 	registered: function(){
 	    var con = chat.connections[this.name];
 	    console.log(printf('Client %1 connected.', this.name));
-	    chat.push_message('info', '', _('Connected'), con.msg_stream);
+	    chat.push_message('info', '', _('Connected'), con.symbol);
 	},
 	join: function(channel, nick, message){
 	    var con = chat.connections[this.name];
@@ -566,13 +585,13 @@ var chat = {
 	    /* TODO: else: update user list */
 	    chat.push_message('info', '',
 			      printf(_('%1 joined %2'), nick, channel),
-			      con.channels[channel].msg_stream);
+			      con.channels[channel].symbol);
 	},
 	message: function(from, to, text, message){
 	    var con = chat.connections[this.name];
 	    if(con.channels[to])
 		chat.push_message('user_msg', from, text,
-				  con.channels[to].msg_stream);
+				  con.channels[to].symbol);
 	    /* TODO: other situations */
 	},
 	inputbox_keyup: function(ev){
