@@ -401,9 +401,10 @@ var chat = {
 
 	    let symbol = Symbol(name);
 
-	    let view = inst_div(template_main_view);
+	    let view = inst(template_main_view, 'div');
 	    let msg_stream = view.querySelector('.msg_stream');
 	    let input_box = view.querySelector('.input_box');
+	    msg_stream.dataset.bottom = 'true';
 	    main_view.addWidget(view);
 	    
 	    let label = create('span', name);
@@ -445,10 +446,11 @@ var chat = {
 	var name = connection;
 	var symbol = Symbol(printf('%1 %2', name, channel));
 	
-	var view = inst_div(template_main_view);
+	var view = inst(template_main_view, 'div');
 	var msg_stream = view.querySelector('.msg_stream');
 	var user_list = view.querySelector('.user_list');
 	var input_box = view.querySelector('.input_box');
+	msg_stream.dataset.bottom = 'true';
 	main_view.addWidget(view);
 
 	var label = create('span', channel);
@@ -469,6 +471,21 @@ var chat = {
 	};
     },
     /**
+     * Checks if a message stream is scrolled to bottom
+     * @param Widget.List msg_stream
+     * @return Boolean
+     */
+    check_scroll: function(msg_stream){
+	var bottom;
+	if(msg_stream.style.display == 'none'){
+	    bottom = false;
+	}else{
+	    bottom = (msg_stream.scrollTop + msg_stream.offsetHeight == msg_stream.scrollHeight);
+	    msg_stream.dataset.bottom = bottom;
+	}
+	return bottom;
+    },
+    /**
      * Adds a new message line into the message stream box "msg_stream"
      * @param String type
      * @param String from
@@ -478,6 +495,7 @@ var chat = {
      */
     push_message: function(type, from, text, msg_stream){
 	var time = printf('(%1)', date.getTime());
+	var bottom = this.check_scroll(msg_stream);
 	var content = inst(template_message, {
 	    '.message_date': {
 		textContent: time,
@@ -493,11 +511,13 @@ var chat = {
 	    },
 	    '.message_body': format_message(text)
 	});
-	var msg = create('div', {
+	var msg = create('widget-list-item', {
 	    className: 'message',
 	    children: [content]
 	});
 	msg_stream.insert(msg);
+	if(bottom)
+	    msg_stream.scrollTop = msg_stream.scrollHeight;
     },
     /**
      * Executes an IRC command on current connection and current channel
@@ -520,15 +540,19 @@ var chat = {
 	    /* else */
 	    break;
 	case 'join':
-	    for(let channel of args.split(' '))
-		client.join(channel);
+	    client.join(args);
 	    break;
 	/* part, msg, action, mode ... */
 	}
     },
     callbacks: {
 	change_view: function(ev){
-	    main_view.currentWidget = chat.view_data[ev.detail.symbol].get().view;
+	    var view_obj = chat.view_data[ev.detail.symbol].get();
+	    var msg_stream = view_obj.msg_stream;
+	    chat.check_scroll(main_view.currentWidget);
+	    main_view.currentWidget = view_obj.view;
+	    if(msg_stream.dataset.bottom == 'true')
+		msg_stream.scrollTop = msg_stream.scrollHeight;
 	},
 	registered: function(){
 	    var con = chat.connections[this.name];
