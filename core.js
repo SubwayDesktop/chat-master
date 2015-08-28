@@ -416,9 +416,12 @@ var chat = {
 
 	    input_box.addEventListener('keyup', this.callbacks.inputbox_keyup);
 
-	    client.on('registered', this.callbacks.registered);
-	    client.on('join', this.callbacks.join);
-	    client.on('message', this.callbacks.message);
+	    ['registered', 'join', 'part', 'quit', 'topic', 'message',
+	     'selfMessage', 'notice', 'action', 'error'].forEach(function (I){
+		 client.on(I, chat.callbacks[
+		     I.replace(/[A-Z]/g, '_$&').toLowerCase()
+		 ]);
+	     });
 
 	    this.view_data[symbol] = new this.ViewData(name);
 	    
@@ -489,17 +492,20 @@ var chat = {
     },
     /**
      * Adds a new message line into the message stream box "msg_stream"
-     * @param String type
+     * @param Array<String> flags
      * @param String from
      * @param String text
      * @param Symbol symbol
      * @return void
      */
-    push_message: function(type, from, text, symbol){
+    push_message: function(flags, from, text, symbol){
 	var view_obj = this.view_data[symbol].get();
 	var msg_stream = view_obj.msg_stream;
 	var time = printf('(%1)', date.getTime());
 	var bottom = this.check_scroll(msg_stream);
+	if(!Array.isArray(flags))
+	    flags = [flags];
+	flags.push('message');
 	var content = inst(template_message, {
 	    '.message_date': {
 		textContent: time,
@@ -508,7 +514,7 @@ var chat = {
 		}
 	    },
 	    '.message_from': {
-		textContent: (from && (from + ':')),
+		textContent: from,
 		style: {
 		    color: (from && color.get(from))
 		}
@@ -516,13 +522,13 @@ var chat = {
 	    '.message_body': format_message(text)
 	});
 	var msg = create('widget-list-item', {
-	    className: 'message',
+	    classList: flags,
 	    children: [content]
 	});
 	msg_stream.insert(msg);
 	if(bottom)
 	    msg_stream.scrollTop = msg_stream.scrollHeight;
-	if(type == 'user_msg' && view_obj.counter
+	if(flags.indexOf('user_msg') != -1 && view_obj.counter
 	   && symbol != channel_switcher.currentRow){
 	    let counter = view_obj.counter;
 	    let count;
@@ -546,18 +552,22 @@ var chat = {
 	var current_channel = data.channel;
 	var con = this.connections[current_connection];
 	var client = con.client;
+	var args_arr;
 	switch(command){
 	case 'say':
-	    if(current_channel){
+	    if(current_channel)
 		client.say(current_channel, args);
-		this.push_message('self', client.nick, args, symbol);
-	    }
-	    /* else */
 	    break;
 	case 'join':
 	    client.join(args);
 	    break;
-	/* part, msg, action, mode ... */
+	case 'part':
+	    args_arr = args.split(' ');
+	    client.part(args_arr[0], args_arr[1]);
+	case 'action':
+	    if(current_channel)
+		client.action(current_channel, args);
+	/* msg, mode ... */
 	}
     },
     callbacks: {
@@ -576,23 +586,80 @@ var chat = {
 	registered: function(){
 	    var con = chat.connections[this.name];
 	    console.log(printf('Client %1 connected.', this.name));
-	    chat.push_message('info', '', _('Connected'), con.symbol);
+	    chat.push_message(['info', 'connected'], '', _('Connected'),
+			      con.symbol);
 	},
 	join: function(channel, nick, message){
 	    var con = chat.connections[this.name];
 	    if(nick == con.client.nick)
 		chat.add_channel(this.name, channel);
-	    /* TODO: else: update user list */
-	    chat.push_message('info', '',
-			      printf(_('%1 joined %2'), nick, channel),
+	    else
+		chat.push_message(['info', 'join'], '',
+				  printf(_('%1 joined %2'), nick, channel),
+				  con.channels[channel].symbol);
+	},
+	part: function(channel, nick, reason, message){
+	    var con = chat.connections[this.name];
+	    if(nick == con.client.nick)
+		return;
+	    else if(reason)
+		chat.push_message(['info', 'part'], '',
+				  printf(_('%1 left %2 - %3'), nick,
+					 channel, reason),
+				  con.channels[channel].symbol);
+	    else
+		chat.push_message(['info', 'part'], '',
+				  printf(_('%1 left %2'), nick, channel),
+				  con.channels[channel].symbol);
+	},
+	quit: function(nick, reason, channels, message){
+	    console.log({
+		nick: nick,
+		reason: reason,
+		channels: channels,
+		message: message
+	    });
+	},
+	topic: function(channel, topic, nick, message){
+	    var con = chat.connections[this.name];
+	    chat.push_message(['topic'], '',
+			      printf(_('[TOPIC] %1 set by %2'), topic, nick),
 			      con.channels[channel].symbol);
+	},
+	self_message: function(to, text){
+	    var con = chat.connections[this.name];
+	    chat.push_message(['self'], con.client.nick, text,
+			      con.channels[to].symbol);
 	},
 	message: function(from, to, text, message){
 	    var con = chat.connections[this.name];
+	    chat.push_message(['user_msg'], from, text,
+			      con.channels[to].symbol);
+	},
+	notice: function(from, to, text, message){
+	    var con = chat.connections[this.name];
 	    if(con.channels[to])
-		chat.push_message('user_msg', from, text,
+		chat.push_message(['user_msg', 'notice'], from, text,
 				  con.channels[to].symbol);
-	    /* TODO: other situations */
+	    else if(!from)
+		chat.push_message(['notice', 'server_info'], '', text,
+				  con.symbol);
+	},
+	action: function(from, to, text, message){
+	    var con = chat.connections[this.name];
+	    chat.push_message(['user_msg', 'action'], from, text,
+			      con.channels[to].symbol);
+	},
+	error: function(message){
+	    var con = chat.connections[this.name];
+	    var args = message.args;
+	    args.shift();
+	    var err = args.join(' ');
+	    chat.push_message('error', '', printf(_('[ERROR] %1'), err),
+			      con.symbol);
+	    for(let I of Object.keys(con.channels))
+		chat.push_message('error', '', printf(_('[ERROR] %1'), err),
+				  con.channels[I].symbol);
 	},
 	inputbox_keyup: function(ev){
 	    if(ev.keyCode == 13){

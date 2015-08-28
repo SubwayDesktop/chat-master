@@ -50,6 +50,32 @@ input[type="checkbox"] + label {
 }
 
 
+.message.user_msg:not(.action) > .message_from::after {
+    content: ":"
+}
+
+
+.message.info > .message_body {
+    color: #393;
+}
+
+
+.message.error > .message_body {
+    color: #F33;
+}
+
+
+.message.action > .message_from {
+    font-weight: bold;
+}
+
+
+.message.action > .message_from::before {
+    content: "***";
+    font-weight: bold;
+}
+
+
 .input_box {
     flex-grow: 1;
 }
