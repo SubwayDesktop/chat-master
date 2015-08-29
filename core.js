@@ -491,7 +491,7 @@ var chat = {
 	return bottom;
     },
     /**
-     * Adds a new message line into the message stream box "msg_stream"
+     * Adds a new message line into the message stream box of the symbol
      * @param Array<String> flags
      * @param String from
      * @param String text
@@ -539,6 +539,35 @@ var chat = {
 	    counter.dataset.count = count;
 	    counter.textContent = printf(' (%1)', count);
 	}
+    },
+    /**
+     * Adds a new error message line
+     * @param Symbol con_symbol
+     * @param String text
+     */
+    push_error: function(con_symbol, text){
+	var con = this.connections[this.view_data[con_symbol].connection];
+	var time = printf('(%1)', date.getTime());
+	function new_error(){
+	    var content = inst(template_message, {
+		'.message_date': time,
+		'.message_from': {
+		    textContent: _('[ERROR]'),
+		    style: {
+			color: '#F33'
+		    }
+		},
+		'.message_body': text
+	    });
+	    var err = create('widget-list-item', {
+		classList: ['message', 'error'],
+		children: [content]
+	    });
+	    return err;
+	}
+	con.msg_stream.insert(new_error());
+	for(let I of Object.keys(con.channels))
+	    con.channels[I].msg_stream.insert(new_error());
     },
     /**
      * Executes an IRC command on current connection and current channel
@@ -654,12 +683,7 @@ var chat = {
 	    var con = chat.connections[this.name];
 	    var args = message.args;
 	    args.shift();
-	    var err = args.join(' ');
-	    chat.push_message('error', '', printf(_('[ERROR] %1'), err),
-			      con.symbol);
-	    for(let I of Object.keys(con.channels))
-		chat.push_message('error', '', printf(_('[ERROR] %1'), err),
-				  con.channels[I].symbol);
+	    chat.push_error(con.symbol, args.join(' '));
 	},
 	inputbox_keyup: function(ev){
 	    if(ev.keyCode == 13){

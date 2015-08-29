@@ -60,11 +60,6 @@ input[type="checkbox"] + label {
 }
 
 
-.message.error > .message_body {
-    color: #F33;
-}
-
-
 .message.action > .message_from {
     font-weight: bold;
 }
