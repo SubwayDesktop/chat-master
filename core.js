@@ -416,7 +416,7 @@ var chat = {
 
 	    input_box.addEventListener('keyup', this.callbacks.inputbox_keyup);
 
-	    ['registered', 'join', 'part', 'quit', 'topic', 'message',
+	    ['registered', 'join', 'names', 'part', 'quit', 'topic', 'message',
 	     'selfMessage', 'notice', 'action', 'error'].forEach(function (I){
 		 client.on(I, chat.callbacks[
 		     I.replace(/[A-Z]/g, '_$&').toLowerCase()
@@ -452,6 +452,7 @@ var chat = {
 	var view = inst(template_main_view, 'div');
 	var msg_stream = view.querySelector('.msg_stream');
 	var user_list = view.querySelector('.user_list');
+	var user_list_header = view.querySelector('.user_list_header');
 	var input_box = view.querySelector('.input_box');
 	msg_stream.dataset.bottom = 'true';
 	main_view.addWidget(view);
@@ -471,6 +472,7 @@ var chat = {
 	    view: view,
 	    msg_stream: msg_stream,
 	    user_list: user_list,
+	    user_list_header: user_list_header,
 	    input_box: input_box,
 	    counter: counter
 	};
@@ -627,6 +629,30 @@ var chat = {
 				  printf(_('%1 joined %2'), nick, channel),
 				  con.channels[channel].symbol);
 	},
+	names: function(channel, users){
+	    var con = chat.connections[this.name];
+	    var keys = Object.keys(users);
+	    var user_list = con.channels[channel].user_list;
+	    var header = con.channels[channel].user_list_header;
+	    keys.sort();
+	    header.textContent = printf(_('%1 people', '%1 people'),
+					keys.length);
+	    user_list.clear();
+	    for(let I of keys){
+		let flags = [];
+		if(users[I].indexOf('@') != -1)
+		    flags.push('user_op');
+		if(users[I].indexOf('+') != -1)
+		    flags.push('user_voice');
+		user_list.insert(create('widget-list-item', {
+		    textContent: I,
+		    classList: flags,
+		    style: {
+			color: color.get(I)
+		    }
+		}));
+	    }
+	},
 	part: function(channel, nick, reason, message){
 	    var con = chat.connections[this.name];
 	    if(nick == con.client.nick)
@@ -662,8 +688,10 @@ var chat = {
 	},
 	message: function(from, to, text, message){
 	    var con = chat.connections[this.name];
-	    chat.push_message(['user_msg'], from, text,
-			      con.channels[to].symbol);
+	    if(con.channels[to])
+		chat.push_message(['user_msg'], from, text,
+				  con.channels[to].symbol);
+	    /* TODO: else */
 	},
 	notice: function(from, to, text, message){
 	    var con = chat.connections[this.name];

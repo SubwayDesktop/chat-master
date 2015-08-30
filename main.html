@@ -100,9 +100,12 @@
 	  <layout-cell grow="grow">
 	    <widget-list class="msg_stream"></widget-list>
 	  </layout-cell>
-	  <layout-cell>
-	    <widget-list class="user_list"></widget-list>
-	  </layout-cell>
+	  <layout-vbox style="flex-basis: 10em;">
+	    <div class="user_list_header"></div>
+	    <layout-cell grow="grow">
+	      <widget-list class="user_list"></widget-list>
+	    </layout-cell>
+	  </layout-vbox>
 	</layout-hbox>
 	<layout-hbox>
 	  <input type="text" class="input_box"></input>

@@ -71,6 +71,27 @@ input[type="checkbox"] + label {
 }
 
 
+.user_list {
+    font-weight: bold;
+}
+
+
+.user_list_header {
+    font-weight: bold;
+    text-align: center;
+}
+
+
+.user_op {
+    text-decoration: underline;
+}
+
+
+.user_voice::after {
+    content: "+"
+}
+
+
 .input_box {
     flex-grow: 1;
 }
