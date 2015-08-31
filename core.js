@@ -637,21 +637,58 @@ var chat = {
 	    keys.sort();
 	    header.textContent = printf(_('%1 people', '%1 people'),
 					keys.length);
-	    user_list.clear();
-	    for(let I of keys){
-		let flags = [];
-		if(users[I].indexOf('@') != -1)
+
+	    function gen_flags(nick){
+		var flags = [];
+		if(users[nick].indexOf('@') != -1)
 		    flags.push('user_op');
-		if(users[I].indexOf('+') != -1)
+		if(users[nick].indexOf('+') != -1)
 		    flags.push('user_voice');
-		user_list.insert(create('widget-list-item', {
-		    textContent: I,
+		return flags;
+	    }
+
+	    function new_item(nick){
+		var flags = gen_flags(nick);
+		return create('widget-list-item', {
+		    textContent: nick,
 		    classList: flags,
 		    style: {
-			color: color.get(I)
+			color: color.get(nick)
+		    },
+		    dataset: {
+			nick: nick
 		    }
-		}));
+		});
 	    }
+
+	    user_list.clear();
+	    for(let I of keys)
+		user_list.insert(new_item(I));
+
+	    /* "users" is a reference, which is equivalent to
+	     * con.client.chans[channel.toLowerCase()].users
+	     */
+	    Object.observe(users, function(changes){
+		for(let change of changes){
+		    /* "update" change type is useless
+		     * because node-irc does not update values of "users"
+		     */
+		    switch(change.type){
+		    case 'add':
+			for(let item of user_list.childNodes){
+			    if(change.name < item.dataset.nick){
+				user_list.insert(new_item(change.name), item);
+				break;
+			    }
+			}
+			break;
+		    case 'delete':
+			user_list.remove(user_list.querySelector(
+			    printf('[data-nick="%1"]', change.name)));
+			break;
+		    }
+		}
+	    });
 	},
 	part: function(channel, nick, reason, message){
 	    var con = chat.connections[this.name];
