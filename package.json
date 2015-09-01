@@ -3,6 +3,8 @@
     "main": "main.html",
     "window": {
 	"toolbar": false,
+	"width": 935,
+	"height": 575,
 	"position": "center"
     },
     "js-flags": "--harmony"
