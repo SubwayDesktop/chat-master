@@ -676,12 +676,17 @@ var chat = {
 		    /* "update" change type is useless
 		     * because node-irc does not update values of "users"
 		     */
+		    let ok = false;
 		    switch(change.type){
 		    case 'add':
 			for(let item of user_list.childNodes){
 			    if(change.name < item.dataset.nick){
 				user_list.insert(new_item(change.name), item);
+				ok = true;
 				break;
+			    }
+			    if(!ok){
+				user_list.insert(new_item(change.name));
 			    }
 			}
 			break;
