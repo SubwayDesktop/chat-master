@@ -592,9 +592,12 @@ var chat = {
 	case 'join':
 	    client.join(args);
 	    break;
+	    /*
 	case 'part':
 	    args_arr = args.split(' ');
 	    client.part(args_arr[0], args_arr[1]);
+	    break;
+	    */
 	case 'action':
 	    if(current_channel)
 		client.action(current_channel, args);
