@@ -438,6 +438,7 @@ var chat = {
 	    client.connect(0);
 	}
 	channel_switcher.currentRow = this.connections[names[0]].symbol;
+	window.addEventListener('resize', this.callbacks.window_resize);
     },
     /**
      * Adds a main view for new channel
@@ -479,10 +480,11 @@ var chat = {
     },
     /**
      * Checks if a message stream is scrolled to bottom
-     * @param Widget.List msg_stream
+     * @param Symbol symbol
      * @return Boolean
      */
-    check_scroll: function(msg_stream){
+    check_scroll: function(symbol){
+	var msg_stream = this.view_data[symbol].get().msg_stream;
 	var bottom;
 	if(msg_stream.style.display == 'none'){
 	    bottom = false;
@@ -504,7 +506,7 @@ var chat = {
 	var view_obj = this.view_data[symbol].get();
 	var msg_stream = view_obj.msg_stream;
 	var time = printf('(%1)', date.getTime());
-	var bottom = this.check_scroll(msg_stream);
+	var bottom = this.check_scroll(symbol);
 	if(!Array.isArray(flags))
 	    flags = [flags];
 	flags.push('message');
@@ -608,7 +610,7 @@ var chat = {
 	change_view: function(ev){
 	    var view_obj = chat.view_data[ev.detail.symbol].get();
 	    var msg_stream = view_obj.msg_stream;
-	    chat.check_scroll(main_view.currentWidget);
+	    chat.check_scroll(ev.detail.symbol);
 	    main_view.currentWidget = view_obj.view;
 	    if(msg_stream.dataset.bottom == 'true')
 		msg_stream.scrollTop = msg_stream.scrollHeight;
@@ -776,6 +778,9 @@ var chat = {
 	    }else if(ev.keyCode == 9){
 		/* tab completion */
 	    }
+	},
+	window_resize: function(){
+	    chat.check_scroll(channel_switcher.currentRow);
 	}
     }
 };
